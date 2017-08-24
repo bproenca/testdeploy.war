@@ -5,7 +5,7 @@
 
 <%
 /*
- * Script for server-site tests with database
+ * Script for server-side tests with database
  * This script takes the connection from a JNDI data source
  * It then selects all records from a table, received as query string, and displays it
  */
@@ -13,7 +13,6 @@
     String selectQry = "SELECT  * FROM " + table;    // change this line, eg: select * from products where price < 10
 
     // Initialise and output top of page
-
     out.println("<html>");
     out.println("<head>");
     out.println("    <title>BCP - JDBC JNDI DBCP Driver Test JSP v1.3 (Server Side)</title>");
