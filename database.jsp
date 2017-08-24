@@ -2,41 +2,31 @@
 <%@ page import="java.sql.*" %>
 <%@ page import="javax.sql.*" %>
 <%@ page import="javax.naming.*" %>
+
 <%
 /*
- * Synopsis
- * =====================================================================================
- * This script takes the connection from a JNDI data source, which is defined
- * in context.xml.  It then selects all records from a table, then displays
- * each row as a set of lines, in the following format:
- *
- *   [Column 1 - columnname] value
- *   [Column 2 - columnname] value
- *   [Column 3 - columnname] value
- *
- *   [Column 1 - columnname] value
- *   [Column 2 - columnname] value
- *   [Column 3 - columnname] value
- *
+ * Script for server-site tests with database
+ * This script takes the connection from a JNDI data source
+ * It then selects all records from a table, received as query string, and displays it
  */
-    String selectQry = "select * from view_cor_contabilista";    // change this line, eg: select * from products where price < 10
+    String table = request.getParameter("table");
+    String selectQry = "SELECT  * FROM " + table;    // change this line, eg: select * from products where price < 10
 
     // Initialise and output top of page
-    //out.println("<HTML><BODY BGCOLOR=\"#ddddff\">");
-    //out.println("<HTML><TITLE>BCP - JDBC JNDI DBCP Driver Test JSP v1.3</TITLE><BODY><FONT FACE=\"Verdana, Helvetica\" size=4>");
-    //out.println("Metawerx JDBC JNDI DBCP Driver Test JSP v1.3");
 
     out.println("<html>");
     out.println("<head>");
-    out.println("    <title>Simple application server Tests</title>");
+    out.println("    <title>BCP - JDBC JNDI DBCP Driver Test JSP v1.3 (Server Side)</title>");
     out.println("    <link rel=\"stylesheet\" href=\"https://cdn.synchro.com.br/assets/fontawesome/4.7.0/css/font-awesome.css\"/>");
     out.println("    <link rel=\"stylesheet\" href=\"https://cdn.synchro.com.br/assets/saturn-v/rc/saturn-v.css\"/>");
     out.println("</head>");
     out.println("   <body>");
+    out.println("       <h4 class=\"sv-fw-normal sv-ts-i\">[" + selectQry + "]</h4>");
+    out.println("       <hr>");
 
     // Get DataSource from JNDI (defined in context.xml file)
+    // DataSource ds = (DataSource)ctx.lookup("java:comp/env/jdbc/mydatabase");
     Context ctx = new InitialContext();
-    //DataSource ds = (DataSource)ctx.lookup("java:comp/env/jdbc/mydatabase");
     DataSource ds = (DataSource)ctx.lookup("java:/SFW_DS");
 
     // Create connection/statement variables outside of try block
@@ -49,49 +39,54 @@
         s = c.createStatement();
 
         // Execute SQL
-        out.println("<h3>Executing query...</h3>");
-        out.println("<h4><i>["+selectQry+"]</i></h4>");
-
         try {
 
             // Create a statement and execute the query on it
-            String name;
             s.execute(selectQry);
 
             // Get result set
             ResultSet r = s.getResultSet();
-            ResultSetMetaData rm = r.getMetaData();    // call before r.next() see note 4 above in JDBC hints
+            ResultSetMetaData rm = r.getMetaData();
 
             // Display data
             int count = rm.getColumnCount();
-            while (r.next()) {
-                for(int i = 1; i <= rm.getColumnCount(); i++)
-                    out.println("<BR />[Column " + i + " - " + rm.getColumnName(i) + "] " + r.getString(rm.getColumnName(i)));
-                out.println("<P />");
+            out.println("<table class=\"sv-table with--borders with--stripes with--hover\">");
+            out.println("<thead><tr>");
+            for(int i = 1; i <= count; i++) {
+                out.println("<th>" + rm.getColumnName(i) + "</th>");
             }
+            out.println("</tr></thead><tbody>");
 
-            // Clean up
-            s.close();
-            c.close();
+            while (r.next()) {
+                out.println("<tr>");
+                for(int i = 1; i <= count; i++) {
+                    out.println("<td>" + r.getString(rm.getColumnName(i)) + "</td>");
+                }
+                out.println("</tr>");
+            }
+            out.println("</tbody></table>");
 
         } catch (SQLException se) {
-            out.println("Errors occurred: " + se.toString());
+            out.println("Errors occurred: <b>" + se.toString() + "</b><br><br>");
         } catch (Exception e) {
-            out.println("Errors occurred: " + e.toString());
+            out.println("Errors occurred: <b>" + e.toString() + "</b><br><br>");
         }
 
     } finally {
-
-        // Ensure connection is closed and returned to the pool, even if errors occur.
-        // This is *very* important if using a connection pool, because after all the
-        // connections are used, the application will hang on getConnection(), waiting
-        // for a connection to become available.
-        // Any errors from the following closes are just ignored.  The main thing is
-        // that we have definitely closed the connection.
-        try { if(s != null) s.close(); } catch (Exception e) {}
-        try { if(c != null) c.close(); } catch (Exception e) {}
+        try {
+            if (s != null) s.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        try {
+            if (c != null) c.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     // Done
-    out.println("</PRE><P /><HR /><B>DONE</B></FONT></FONT></BODY></HTML>");
+
+    out.println("<div class=\"sv-segment sv-pa--15 sv-bg-color--blue-50\"></i>How to use it:</i> http://localhost:8080/testdeploy/database.jsp<b>?table=changelog</b></div>");
+    out.println("<br><br><p>DONE</p></body></html>");
 %>
